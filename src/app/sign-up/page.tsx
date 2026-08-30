@@ -18,7 +18,7 @@ export default function SignUpPage() {
             setError(error.message ?? "Erreur lors de l'inscription");
             return;
         }
-        router.push("/workspaces");
+        router.push("/profil");
     }
 
     return (

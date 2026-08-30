@@ -8,7 +8,9 @@ declare const globalThis: {
   prismaGlobal: ReturnType<typeof prismaClientSingleton>;
 } & typeof global;
 
-const prisma = globalThis.prismaGlobal ?? prismaClientSingleton();
+// We force a new instance here temporarily because Next.js caches the old Prisma client 
+// in development. This ensures the newly generated WorkspaceInvitation model is picked up!
+const prisma = prismaClientSingleton();
 
 export default prisma;
 

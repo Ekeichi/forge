@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
+import Link from "next/link";
 
 export default function SignInPage() {
     const [email, setEmail] = useState("");
@@ -17,7 +18,7 @@ export default function SignInPage() {
             setError(error.message ?? "Identifiants invalides");
             return;
         }
-        router.push("/workspaces");
+        router.push("/profil");
     }
 
     return (
@@ -27,6 +28,9 @@ export default function SignInPage() {
                 <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email@exemple.com" required />
                 <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Mot de passe" required />
                 <button type="submit">Se connecter</button>
+                <br></br>
+                <Link href="/sign-up">S'inscrire</Link>
+                <br></br>
             </form>
             {error && <p style={{ color: "red" }}>{error}</p>}
         </main>

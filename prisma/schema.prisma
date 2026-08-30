@@ -31,6 +31,7 @@ model User {
   sessions    Session[]
 
   memberships WorkspaceMembership[]
+  invitations WorkspaceInvitation[]
 }
 
 model Session {
@@ -84,6 +85,7 @@ model Workspace {
   createdAt DateTime @default(now())
 
   memberships WorkspaceMembership[]
+  invitations WorkspaceInvitation[]
 }
 
 model WorkspaceMembership {
@@ -97,6 +99,21 @@ model WorkspaceMembership {
 
   @@id([userId, workspaceId])
 }
+
+model WorkspaceInvitation {
+  id          String   @id @default(cuid())
+  email       String   // L'email de la personne invitée
+  workspaceId String
+  inviterId   String   // Optionnel : qui a envoyé l'invitation
+  status      String   @default("PENDING") // PENDING, ACCEPTED, DECLINED
+  createdAt   DateTime @default(now())
+
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  inviter     User      @relation(fields: [inviterId], references: [id], onDelete: Cascade)
+
+  @@unique([email, workspaceId]) // Une seule invitation par workspace par email
+}
+
 
 enum Role {
   OWNER
