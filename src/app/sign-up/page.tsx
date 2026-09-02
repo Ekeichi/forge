@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
+import Link from "next/link";
 
 export default function SignUpPage() {
     const [name, setName] = useState("");
@@ -22,15 +23,73 @@ export default function SignUpPage() {
     }
 
     return (
-        <main style={{ padding: 32 }}>
-            <h1>Créer un compte</h1>
-            <form onSubmit={handleSubmit}>
-                <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Nom" required />
-                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email@exemple.com" required />
-                <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Mot de passe" required minLength={8} />
-                <button type="submit">S&apos;inscrire</button>
-            </form>
-            {error && <p style={{ color: "red" }}>{error}</p>}
+        <main className="min-h-screen bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 flex flex-col items-center justify-center p-6">
+            <div className="w-full max-w-sm mx-auto space-y-6">
+                
+                <div className="text-center space-y-2 mb-8">
+                    <h1 className="text-2xl font-bold tracking-tight">Créer un compte</h1>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Rejoignez Forge pour gérer vos espaces</p>
+                </div>
+
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    <div className="space-y-1">
+                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Nom</label>
+                        <input 
+                            type="text" 
+                            value={name} 
+                            onChange={(e) => setName(e.target.value)} 
+                            placeholder="Votre nom" 
+                            required 
+                            className="w-full px-3 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/10 dark:focus:ring-gray-100/10 focus:border-gray-400 dark:focus:border-gray-600 transition-all placeholder:text-gray-400 dark:placeholder:text-gray-500 text-gray-900 dark:text-gray-100"
+                        />
+                    </div>
+
+                    <div className="space-y-1">
+                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Email</label>
+                        <input 
+                            type="email" 
+                            value={email} 
+                            onChange={(e) => setEmail(e.target.value)} 
+                            placeholder="email@exemple.com" 
+                            required 
+                            className="w-full px-3 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/10 dark:focus:ring-gray-100/10 focus:border-gray-400 dark:focus:border-gray-600 transition-all placeholder:text-gray-400 dark:placeholder:text-gray-500 text-gray-900 dark:text-gray-100"
+                        />
+                    </div>
+                    
+                    <div className="space-y-1">
+                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Mot de passe</label>
+                        <input 
+                            type="password" 
+                            value={password} 
+                            onChange={(e) => setPassword(e.target.value)} 
+                            placeholder="••••••••" 
+                            required minLength={8} 
+                            className="w-full px-3 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/10 dark:focus:ring-gray-100/10 focus:border-gray-400 dark:focus:border-gray-600 transition-all placeholder:text-gray-400 dark:placeholder:text-gray-500 text-gray-900 dark:text-gray-100"
+                        />
+                        <p className="text-xs text-gray-500 dark:text-gray-400">8 caractères minimum.</p>
+                    </div>
+                    
+                    <button 
+                        type="submit"
+                        className="w-full bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 font-medium py-2 px-4 rounded-md hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors shadow-sm mt-4"
+                    >
+                        S&apos;inscrire
+                    </button>
+                </form>
+
+                {error && (
+                    <div className="p-3 text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/50 rounded-md border border-red-100 dark:border-red-900/50">
+                        {error}
+                    </div>
+                )}
+
+                <div className="text-center text-sm text-gray-500 dark:text-gray-400 pt-4 border-t border-gray-100 dark:border-gray-800">
+                    Déjà un compte ?{" "}
+                    <Link href="/sign-in" className="font-medium text-gray-900 dark:text-gray-100 hover:underline">
+                        Se connecter
+                    </Link>
+                </div>
+            </div>
         </main>
     );
 }

@@ -81,6 +81,10 @@ export async function inviteMember(formData: FormData) {
 
     const existingUser = await prisma.user.findUnique({ where: { email } });
 
+    if (!existingUser) {
+        return { error: "Cet utilisateur n'existe pas" };
+    }
+
     if (existingUser) {
         const alreadyMember = await prisma.workspaceMembership.findUnique({
             where: {

@@ -32,6 +32,7 @@ model User {
 
   memberships WorkspaceMembership[]
   invitations WorkspaceInvitation[]
+  documents   Document[]
 }
 
 model Session {
@@ -86,6 +87,7 @@ model Workspace {
 
   memberships WorkspaceMembership[]
   invitations WorkspaceInvitation[]
+  documents   Document[]
 }
 
 model WorkspaceMembership {
@@ -114,6 +116,21 @@ model WorkspaceInvitation {
   @@unique([email, workspaceId]) // Une seule invitation par workspace par email
 }
 
+model Document {
+  id          String   @id @default(cuid())
+  title       String
+  content     String?  // Le contenu du document
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  
+  ownerId     String
+  owner       User      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, title])
+}
 
 enum Role {
   OWNER
