@@ -63,25 +63,25 @@ export default async function WorkspacePage({ params }: { params: Promise<{ work
                     {/* Panneau d'administration */}
                     {(currentUserRole === "ADMIN" || currentUserRole === "OWNER") && (
                         <div className="space-y-8">
-                            
+
                             {/* Inviter un membre */}
                             <section className="bg-gray-50/50 dark:bg-gray-900/50 p-6 rounded-xl border border-gray-100 dark:border-gray-800">
                                 <h2 className="text-lg font-semibold mb-1">Inviter un membre</h2>
                                 <p className="text-sm text-gray-500 dark:text-gray-400 mb-5">Ajoutez quelqu'un à cet espace.</p>
-                                
+
                                 <form action={async (formData) => {
                                     "use server";
                                     await inviteMember(formData);
                                 }} className="flex flex-col gap-3">
                                     <input type="hidden" name="workspaceId" value={workspace.id} />
-                                    <input 
-                                        type="email" 
-                                        name="email" 
-                                        placeholder="email@exemple.com" 
-                                        required 
+                                    <input
+                                        type="email"
+                                        name="email"
+                                        placeholder="email@exemple.com"
+                                        required
                                         className="px-3 py-2 bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-700 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/10 dark:focus:ring-gray-100/10 focus:border-gray-400 dark:focus:border-gray-500 transition-all placeholder:text-gray-400 dark:placeholder:text-gray-500"
                                     />
-                                    <button 
+                                    <button
                                         type="submit"
                                         className="bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 text-sm font-medium py-2 px-4 rounded-md hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors shadow-sm"
                                     >
@@ -94,13 +94,13 @@ export default async function WorkspacePage({ params }: { params: Promise<{ work
                             <section className="bg-gray-50/50 dark:bg-gray-900/50 p-6 rounded-xl border border-gray-100 dark:border-gray-800">
                                 <h2 className="text-lg font-semibold mb-1">Gérer les rôles</h2>
                                 <p className="text-sm text-gray-500 dark:text-gray-400 mb-5">Modifiez les autorisations d&apos;un membre.</p>
-                                
+
                                 <form action={async (formData) => {
                                     "use server";
                                     await updateMemberRole(formData);
                                 }} className="flex flex-col gap-3">
                                     <input type="hidden" name="workspaceId" value={workspace.id} />
-                                    <select 
+                                    <select
                                         name="userId"
                                         className="px-3 py-2 bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-700 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/10 dark:focus:ring-gray-100/10 focus:border-gray-400 dark:focus:border-gray-500 transition-all text-gray-900 dark:text-gray-100"
                                     >
@@ -110,7 +110,7 @@ export default async function WorkspacePage({ params }: { params: Promise<{ work
                                             </option>
                                         ))}
                                     </select>
-                                    <select 
+                                    <select
                                         name="role"
                                         className="px-3 py-2 bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-700 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/10 dark:focus:ring-gray-100/10 focus:border-gray-400 dark:focus:border-gray-500 transition-all text-gray-900 dark:text-gray-100"
                                     >
@@ -118,13 +118,17 @@ export default async function WorkspacePage({ params }: { params: Promise<{ work
                                         <option value="ADMIN">ADMIN</option>
                                         <option value="MEMBER">MEMBER</option>
                                     </select>
-                                    <button 
+                                    <button
                                         type="submit"
                                         className="bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 text-sm font-medium py-2 px-4 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-100 transition-colors shadow-sm"
                                     >
                                         Appliquer le changement
                                     </button>
                                 </form>
+                            </section>
+
+                            <section>
+                                <Link className="text-sm font-medium hover:underline" href={`/workspaces/${workspace.id}/documents`}>Accéder aux documents</Link>
                             </section>
                         </div>
                     )}

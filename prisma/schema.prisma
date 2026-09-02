@@ -119,7 +119,7 @@ model WorkspaceInvitation {
 model Document {
   id          String   @id @default(cuid())
   title       String
-  content     String?  // Le contenu du document
+  content     String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
