@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import prisma from "@/lib/prisma";
 import { AddDocumentForm } from "./AddDocumentForm";
+import { DeleteDocumentButton } from "./DeleteDocumentButton";
 
 export default async function DocumentsPage({ params }: { params: Promise<{ workspaceId: string }> }) {
     const { workspaceId } = await params;
@@ -71,8 +72,9 @@ export default async function DocumentsPage({ params }: { params: Promise<{ work
                                             {d.owner.name ?? d.owner.email} · {new Date(d.createdAt).toLocaleDateString("fr-FR")}
                                         </span>
                                         <span className="text-gray-400 dark:text-gray-500 group-hover:text-gray-900 dark:group-hover:text-gray-100 transition-colors text-sm">
-                                            →
+                                            editer
                                         </span>
+                                        <DeleteDocumentButton documentId={d.id} workspaceId={workspaceId} />
                                     </div>
                                 </Link>
                             ))}

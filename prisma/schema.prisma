@@ -5,13 +5,16 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  provider        = "prisma-client"
+  output          = "../src/generated/prisma"
+  previewFeatures = ["postgresqlExtensions"]
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider          = "postgresql"
+  url               = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+  extensions        = [pgvector(map: "vector")]
 }
 
 
@@ -129,7 +132,22 @@ model Document {
   ownerId     String
   owner       User      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
 
+  chunks      Chunk[]
   @@unique([workspaceId, title])
+}
+
+model Chunk {
+  id          String   @id @default(cuid())
+  title       String
+  content     String?
+  embedding   Unsupported("vector(384)")?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  documentId String
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@unique([documentId, title])
 }
 
 enum Role {
