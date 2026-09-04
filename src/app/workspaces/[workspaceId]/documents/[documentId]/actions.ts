@@ -4,7 +4,7 @@ import { pipeline } from "@xenova/transformers";
 
 let embedder: any = null;
 
-async function getEmbedder() {
+export async function getEmbedder() {
     if (!embedder) {
         embedder = await pipeline("feature-extraction", "Xenova/all-MiniLM-L6-v2");
     }

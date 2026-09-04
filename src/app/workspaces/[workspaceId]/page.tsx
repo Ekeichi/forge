@@ -5,6 +5,22 @@ import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { inviteMember } from "@/app/profil/actions";
 import { updateMemberRole } from "../actions";
+import RagChat from "./RagChat";
+
+const roleStyles: Record<string, string> = {
+    OWNER: "bg-gray-900 text-white dark:bg-gray-100 dark:text-gray-900",
+    ADMIN: "bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-100",
+    MEMBER: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300",
+};
+
+function initials(label: string) {
+    return label
+        .split(/[\s@.]+/)
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((part) => part[0]?.toUpperCase() ?? "")
+        .join("");
+}
 
 export default async function WorkspacePage({ params }: { params: Promise<{ workspaceId: string }> }) {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -27,6 +43,7 @@ export default async function WorkspacePage({ params }: { params: Promise<{ work
     }
 
     const currentUserRole = workspace.memberships.find(m => m.userId === session.user.id)?.role;
+    const canAdminister = currentUserRole === "ADMIN" || currentUserRole === "OWNER";
 
     return (
         <main className="min-h-screen bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 py-12 px-6">
@@ -34,11 +51,56 @@ export default async function WorkspacePage({ params }: { params: Promise<{ work
 
                 {/* En-tête */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-gray-100 dark:border-gray-800 pb-6 gap-4">
-                    <h1 className="text-3xl font-bold tracking-tight">{workspace.name}</h1>
+                    <div>
+                        <h1 className="text-3xl font-bold tracking-tight">{workspace.name}</h1>
+                        <p className="text-gray-500 dark:text-gray-400 mt-1 text-sm flex items-center gap-2">
+                            <span>
+                                {workspace.memberships.length} membre{workspace.memberships.length !== 1 ? "s" : ""}
+                            </span>
+                            {currentUserRole && (
+                                <>
+                                    <span aria-hidden="true">·</span>
+                                    <span>votre rôle&nbsp;: {currentUserRole}</span>
+                                </>
+                            )}
+                        </p>
+                    </div>
                     <Link href="/profil" className="text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors">
                         ← Retour au profil
                     </Link>
                 </div>
+
+                {canAdminister && (
+                    <>
+                        {/* Poser une question aux documents */}
+                        <section className="bg-gray-50/50 dark:bg-gray-900/50 p-6 rounded-xl border border-gray-100 dark:border-gray-800">
+                            <h2 className="text-lg font-semibold mb-1">Interroger vos documents</h2>
+                            <p className="text-sm text-gray-500 dark:text-gray-400 mb-5">
+                                Les réponses s&apos;appuient uniquement sur les documents de cet espace.
+                            </p>
+                            <RagChat workspaceId={workspaceId} />
+                        </section>
+
+                        {/* Accès aux documents */}
+                        <Link
+                            href={`/workspaces/${workspace.id}/documents`}
+                            className="group flex items-center justify-between gap-4 bg-gray-50/50 dark:bg-gray-900/50 p-6 rounded-xl border border-gray-100 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors"
+                        >
+                            <div>
+                                <h2 className="text-lg font-semibold mb-1">Documents</h2>
+                                <p className="text-sm text-gray-500 dark:text-gray-400">
+                                    Consultez, ajoutez et découpez les documents de cet espace.
+                                </p>
+                            </div>
+                            <span
+                                aria-hidden="true"
+                                className="text-gray-400 dark:text-gray-500 group-hover:text-gray-900 dark:group-hover:text-gray-100 group-hover:translate-x-0.5 transition-all"
+                            >
+                                →
+                            </span>
+                        </Link>
+                    </>
+                )}
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
                     {/* Liste des membres */}
@@ -48,26 +110,39 @@ export default async function WorkspacePage({ params }: { params: Promise<{ work
 
                         <div className="border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden bg-white dark:bg-gray-950">
                             <ul className="divide-y divide-gray-100 dark:divide-gray-800">
-                                {workspace.memberships.map((m) => (
-                                    <li key={`${m.userId}-${m.workspaceId}`} className="flex items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors">
-                                        <span className="font-medium text-sm">{m.user.name || m.user.email}</span>
-                                        <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300">
-                                            {m.role}
-                                        </span>
-                                    </li>
-                                ))}
+                                {workspace.memberships.map((m) => {
+                                    const label = m.user.name || m.user.email;
+                                    return (
+                                        <li key={`${m.userId}-${m.workspaceId}`} className="flex items-center justify-between gap-3 p-4 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors">
+                                            <div className="flex items-center gap-3 min-w-0">
+                                                <span className="shrink-0 h-8 w-8 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-xs font-semibold flex items-center justify-center">
+                                                    {initials(label)}
+                                                </span>
+                                                <div className="min-w-0">
+                                                    <p className="font-medium text-sm truncate">{label}</p>
+                                                    {m.user.name && (
+                                                        <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{m.user.email}</p>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            <span className={`shrink-0 text-xs font-semibold px-2.5 py-0.5 rounded-full ${roleStyles[m.role] ?? roleStyles.MEMBER}`}>
+                                                {m.role}
+                                            </span>
+                                        </li>
+                                    );
+                                })}
                             </ul>
                         </div>
                     </section>
 
                     {/* Panneau d'administration */}
-                    {(currentUserRole === "ADMIN" || currentUserRole === "OWNER") && (
+                    {canAdminister && (
                         <div className="space-y-8">
 
                             {/* Inviter un membre */}
                             <section className="bg-gray-50/50 dark:bg-gray-900/50 p-6 rounded-xl border border-gray-100 dark:border-gray-800">
                                 <h2 className="text-lg font-semibold mb-1">Inviter un membre</h2>
-                                <p className="text-sm text-gray-500 dark:text-gray-400 mb-5">Ajoutez quelqu'un à cet espace.</p>
+                                <p className="text-sm text-gray-500 dark:text-gray-400 mb-5">Ajoutez quelqu&apos;un à cet espace.</p>
 
                                 <form action={async (formData) => {
                                     "use server";
@@ -125,10 +200,6 @@ export default async function WorkspacePage({ params }: { params: Promise<{ work
                                         Appliquer le changement
                                     </button>
                                 </form>
-                            </section>
-
-                            <section>
-                                <Link className="text-sm font-medium hover:underline" href={`/workspaces/${workspace.id}/documents`}>Accéder aux documents</Link>
                             </section>
                         </div>
                     )}
