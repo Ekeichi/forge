@@ -40,9 +40,23 @@ export default async function AnalyticsPage({ params }: { params: Promise<{ work
     const total = runs.length;
     const withTool = runs.filter(r => r.toolCalled).length;
     const toolRate = total > 0 ? Math.round((withTool / total) * 100) : 0;
+    const successRate = total > 0
+        ? Math.round((runs.filter(r => r.success).length / total) * 100)
+        : 0;
     const avgLatency = total > 0
         ? Math.round(runs.reduce((acc, r) => acc + (r.latencyMs ?? 0), 0) / total)
         : null;
+    // p95 : une moyenne masque les runs qui partent en boucle
+    const p95Latency = (() => {
+        const values = runs.map(r => r.latencyMs).filter((v): v is number => v !== null).sort((a, b) => a - b);
+        if (values.length === 0) return null;
+        return values[Math.min(values.length - 1, Math.ceil(values.length * 0.95) - 1)];
+    })();
+    const avgIterations = (() => {
+        const values = runs.map(r => r.iterations).filter((v): v is number => v !== null);
+        if (values.length === 0) return null;
+        return values.reduce((a, b) => a + b, 0) / values.length;
+    })();
     const totalInputTokens = runs.reduce((acc, r) => acc + (r.inputTokens ?? 0), 0);
     const totalOutputTokens = runs.reduce((acc, r) => acc + (r.outputTokens ?? 0), 0);
     const avgTopScore = (() => {
@@ -70,12 +84,13 @@ export default async function AnalyticsPage({ params }: { params: Promise<{ work
                 </div>
 
                 {/* KPI cards */}
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
                     {[
                         { label: "Requêtes totales", value: total.toString() },
-                        { label: "Latence moyenne", value: fmt(avgLatency) },
+                        { label: "Taux de succès", value: `${successRate} %` },
+                        { label: "Latence moy. / p95", value: `${fmt(avgLatency)} / ${fmt(p95Latency)}` },
                         { label: "Taux tool_use", value: `${toolRate} %` },
-                        { label: "Tokens (entrée)", value: totalInputTokens.toLocaleString("fr-FR") },
+                        { label: "Tours moyens", value: avgIterations !== null ? avgIterations.toFixed(2) : "—" },
                         { label: "Top score moyen", value: avgTopScore !== null ? fmtScore(avgTopScore) : "—" },
                     ].map(({ label, value }) => (
                         <div
@@ -120,6 +135,7 @@ export default async function AnalyticsPage({ params }: { params: Promise<{ work
                                         <th className="px-4 py-3 text-left font-medium">Date</th>
                                         <th className="px-4 py-3 text-left font-medium">Question</th>
                                         <th className="px-4 py-3 text-center font-medium">RAG</th>
+                                        <th className="px-4 py-3 text-center font-medium">Fin</th>
                                         <th className="px-4 py-3 text-right font-medium">Latence</th>
                                         <th className="px-4 py-3 text-right font-medium">Top score</th>
                                         <th className="px-4 py-3 text-right font-medium">Avg score</th>
@@ -145,10 +161,32 @@ export default async function AnalyticsPage({ params }: { params: Promise<{ work
                                                 )}
                                             </td>
                                             <td className="px-4 py-3 text-center">
-                                                {run.toolCalled ? (
-                                                    <span className="inline-block px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">RAG</span>
-                                                ) : (
+                                                {!run.toolCalled ? (
                                                     <span className="inline-block px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400">direct</span>
+                                                ) : (
+                                                    <div className="flex flex-wrap justify-center gap-1">
+                                                        {run.toolNames?.split(", ").map(name => (
+                                                            <span key={name} className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${
+                                                                name === "search_documents"
+                                                                    ? "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300"
+                                                                    : "bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300"
+                                                            }`}>{name === "search_documents" ? "RAG" : "créer doc"}</span>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </td>
+                                            <td className="px-4 py-3 text-center whitespace-nowrap">
+                                                <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${
+                                                    run.success
+                                                        ? "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300"
+                                                        : "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300"
+                                                }`} title={`${run.stopReason ?? "?"}${run.toolErrors > 0 ? ` · ${run.toolErrors} erreur(s) outil` : ""}`}>
+                                                    {run.stopReason ?? "—"}
+                                                </span>
+                                                {run.iterations !== null && (
+                                                    <span className="text-xs text-gray-400 dark:text-gray-500 ml-1.5 tabular-nums">
+                                                        {run.iterations}t
+                                                    </span>
                                                 )}
                                             </td>
                                             <td className="px-4 py-3 text-right tabular-nums text-gray-600 dark:text-gray-300">

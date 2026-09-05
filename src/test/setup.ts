@@ -10,6 +10,11 @@ vi.mock('next/cache', () => ({
   revalidatePath: vi.fn(),
 }));
 
+// Simuler next/server : `after` s'exécute immédiatement dans les tests
+vi.mock('next/server', () => ({
+  after: vi.fn((callback: () => unknown) => { void callback(); }),
+}));
+
 // Simuler Prisma (on instancie un objet mock)
 vi.mock('@/lib/prisma', () => {
   return {
@@ -31,6 +36,10 @@ vi.mock('@/lib/prisma', () => {
       workspace: {
         create: vi.fn(),
         findFirst: vi.fn(),
+      },
+      agentRun: {
+        create: vi.fn(),
+        findMany: vi.fn(),
       },
       $transaction: vi.fn(),
     },

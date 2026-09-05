@@ -15,14 +15,16 @@ export async function searchChunks(query: string, workspaceId: string) {
     const vector: number[] = Array.from(output.data);
 
     const vectorStr = `[${vector.join(",")}]`;
+    // <=> est la distance cosinus de pgvector : on la convertit en similarite
+    // (1 = identique, 0 = orthogonal) pour que "score haut = plus pertinent".
     const results = await prisma.$queryRaw<{ id: string; title: string; content: string; score: number }[]>`
         SELECT c.id, c.title, c.content,
-               (c.embedding <-> ${Prisma.raw(`'${vectorStr}'::vector`)}) AS score
+               (1 - (c.embedding <=> ${Prisma.raw(`'${vectorStr}'::vector`)})) AS score
         FROM "Chunk" c
         JOIN "Document" d ON c."documentId" = d.id
         WHERE d."workspaceId" = ${workspaceId}
         AND c.embedding IS NOT NULL
-        ORDER BY score
+        ORDER BY score DESC
         LIMIT 5
     `;
     return results;

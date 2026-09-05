@@ -165,12 +165,20 @@ model AgentRun {
   output       String?
 
   toolCalled   Boolean  @default(false)
-  toolName     String?
+  toolNames    String?  // liste des outils appelés, séparés par des virgules
   toolQuery    String?
 
   resultCount  Int?
   topScore     Float?
   averageScore Float?
+
+  docCreated   Boolean  @default(false)
+
+  // metriques de boucle
+  iterations   Int?     // nombre de tours effectues
+  stopReason   String?  // end_turn | max_tokens | max_iterations | error
+  toolErrors   Int      @default(0)
+  success      Boolean  @default(false)
 
   latencyMs    Int?
   inputTokens  Int?

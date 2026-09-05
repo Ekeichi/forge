@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "vitest run",
+    "eval": "vitest run --config vitest.eval.config.mts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.123.0",
