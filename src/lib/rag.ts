@@ -8,7 +8,7 @@ const anthropic = new Anthropic({
 });
 
 
-export async function rag(query: string, workspaceId: string) {
+export async function searchChunks(query: string, workspaceId: string) {
     const pipe = await getEmbedder();
 
     const output = await pipe(query, { pooling: "mean", normalize: true });
@@ -22,9 +22,12 @@ export async function rag(query: string, workspaceId: string) {
         WHERE d."workspaceId" = ${workspaceId}
         AND c.embedding IS NOT NULL
         ORDER BY c.embedding <-> ${Prisma.raw(`'${vectorStr}'::vector`)} 
-        LIMIT 3
+        LIMIT 5
     `;
+    return results;
+}
 
+export async function searchKnowledge(results: any[], query: string) {
     const context = (results as any[]).map(r => r.content).join("\n\n");
 
     const systemPrompt = `Tu dois répondre aux questions des utilisateurs en utilisant UNIQUEMENT le contexte fourni.
@@ -42,8 +45,6 @@ export async function rag(query: string, workspaceId: string) {
         messages: [{ role: "user", content: query }],
     });
 
-    // content peut contenir des blocs `thinking` avant le texte : on cherche le bloc,
-    // on ne suppose pas que c'est le premier.
     const textBlock = completion.content.find((b) => b.type === "text");
     return textBlock?.type === "text" ? textBlock.text : "";
 }

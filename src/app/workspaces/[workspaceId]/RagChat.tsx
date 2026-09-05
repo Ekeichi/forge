@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { askRAG } from "./actions";
+import { askForge } from "./actions";
+import { $Command } from "@aws-sdk/client-s3";
 
 export default function RagChat({ workspaceId }: { workspaceId: string }) {
     const [query, setQuery] = useState("");
@@ -12,7 +13,7 @@ export default function RagChat({ workspaceId }: { workspaceId: string }) {
         e.preventDefault();
         if (!query.trim() || loading) return;
         setLoading(true);
-        const res = await askRAG(query, workspaceId);
+        const res = await askForge(query, workspaceId);
         setResponse(res);
         setLoading(false);
     };
