@@ -155,3 +155,28 @@ enum Role {
   ADMIN
   MEMBER
 }
+
+model AgentRun {
+  id           String   @id @default(cuid())
+  workspaceId  String
+  userId       String
+
+  input        String
+  output       String?
+
+  toolCalled   Boolean  @default(false)
+  toolName     String?
+  toolQuery    String?
+
+  resultCount  Int?
+  topScore     Float?
+  averageScore Float?
+
+  latencyMs    Int?
+  inputTokens  Int?
+  outputTokens Int?
+
+  createdAt    DateTime @default(now())
+
+  @@index([workspaceId, createdAt])
+}

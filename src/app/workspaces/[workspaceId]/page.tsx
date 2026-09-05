@@ -65,9 +65,17 @@ export default async function WorkspacePage({ params }: { params: Promise<{ work
                             )}
                         </p>
                     </div>
-                    <Link href="/profil" className="text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors">
-                        ← Retour au profil
-                    </Link>
+                    <div className="flex items-center gap-4">
+                        <Link
+                            href={`/workspaces/${workspaceId}/analytics`}
+                            className="text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
+                        >
+                            Analytics →
+                        </Link>
+                        <Link href="/profil" className="text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors">
+                            ← Retour au profil
+                        </Link>
+                    </div>
                 </div>
 
                 {canAdminister && (

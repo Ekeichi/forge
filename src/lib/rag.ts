@@ -15,13 +15,14 @@ export async function searchChunks(query: string, workspaceId: string) {
     const vector: number[] = Array.from(output.data);
 
     const vectorStr = `[${vector.join(",")}]`;
-    const results = await prisma.$queryRaw`
-        SELECT c.id, c.title, c.content 
+    const results = await prisma.$queryRaw<{ id: string; title: string; content: string; score: number }[]>`
+        SELECT c.id, c.title, c.content,
+               (c.embedding <-> ${Prisma.raw(`'${vectorStr}'::vector`)}) AS score
         FROM "Chunk" c
         JOIN "Document" d ON c."documentId" = d.id
         WHERE d."workspaceId" = ${workspaceId}
         AND c.embedding IS NOT NULL
-        ORDER BY c.embedding <-> ${Prisma.raw(`'${vectorStr}'::vector`)} 
+        ORDER BY score
         LIMIT 5
     `;
     return results;
