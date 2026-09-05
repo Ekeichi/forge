@@ -1,6 +1,5 @@
 import prisma from "@/lib/prisma";
 import { getEmbedder } from "@/app/workspaces/[workspaceId]/documents/[documentId]/actions";
-import { Prisma } from "@/generated/prisma/client";
 import Anthropic from "@anthropic-ai/sdk";
 
 const anthropic = new Anthropic({
@@ -17,9 +16,10 @@ export async function searchChunks(query: string, workspaceId: string) {
     const vectorStr = `[${vector.join(",")}]`;
     // <=> est la distance cosinus de pgvector : on la convertit en similarite
     // (1 = identique, 0 = orthogonal) pour que "score haut = plus pertinent".
+    // Le vecteur est passe en parametre lie ($1) puis caste, jamais interpole.
     const results = await prisma.$queryRaw<{ id: string; title: string; content: string; score: number }[]>`
         SELECT c.id, c.title, c.content,
-               (1 - (c.embedding <=> ${Prisma.raw(`'${vectorStr}'::vector`)})) AS score
+               (1 - (c.embedding <=> ${vectorStr}::vector)) AS score
         FROM "Chunk" c
         JOIN "Document" d ON c."documentId" = d.id
         WHERE d."workspaceId" = ${workspaceId}

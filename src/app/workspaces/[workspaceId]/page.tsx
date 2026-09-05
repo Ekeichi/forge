@@ -4,7 +4,7 @@ import prisma from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { inviteMember } from "@/app/profil/actions";
-import { updateMemberRole } from "../actions";
+import { removeMember, updateMemberRole } from "../actions";
 import RagChat from "./RagChat";
 
 const roleStyles: Record<string, string> = {
@@ -133,9 +133,26 @@ export default async function WorkspacePage({ params }: { params: Promise<{ work
                                                     )}
                                                 </div>
                                             </div>
-                                            <span className={`shrink-0 text-xs font-semibold px-2.5 py-0.5 rounded-full ${roleStyles[m.role] ?? roleStyles.MEMBER}`}>
-                                                {m.role}
-                                            </span>
+                                            <div className="flex items-center gap-3 shrink-0">
+                                                <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full ${roleStyles[m.role] ?? roleStyles.MEMBER}`}>
+                                                    {m.role}
+                                                </span>
+                                                {canAdminister && m.role !== "OWNER" && m.userId !== session.user.id && (
+                                                    <form action={async (formData) => {
+                                                        "use server";
+                                                        await removeMember(formData);
+                                                    }}>
+                                                        <input type="hidden" name="workspaceId" value={workspace.id} />
+                                                        <input type="hidden" name="userId" value={m.userId} />
+                                                        <button
+                                                            type="submit"
+                                                            className="text-xs text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                                                        >
+                                                            Retirer
+                                                        </button>
+                                                    </form>
+                                                )}
+                                            </div>
                                         </li>
                                     );
                                 })}

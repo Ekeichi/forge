@@ -1,5 +1,4 @@
 import prisma from "@/lib/prisma";
-import { Prisma } from "@/generated/prisma/client";
 import { pipeline } from "@xenova/transformers";
 
 let embedder: any = null;
@@ -19,7 +18,6 @@ export async function embedChunk(chunk: string): Promise<number[]> {
 
 
 export async function chunkDocument(documentId: string) {
-    console.log("chunkDocument called for", documentId);
     const document = await prisma.document.findUnique({
         where: { id: documentId },
     });
@@ -59,14 +57,12 @@ export async function chunkDocument(documentId: string) {
         for (let i = 0; i < chunks.length; i++) {
             const title = `${document.title} - chunk ${i + 1}`;
             const created = createdChunks.find(c => c.title === title);
-            console.log("chunk match:", title, "->", created?.id);
             if (!created) continue;
 
             const vectorStr = `[${embeddings[i].join(",")}]`;
-            console.log("vectorStr length:", embeddings[i].length);
             await prisma.$executeRaw`
             UPDATE "Chunk"
-            SET embedding = ${Prisma.raw(`'${vectorStr}'::vector`)}
+            SET embedding = ${vectorStr}::vector
             WHERE id = ${created.id}
         `;
         }

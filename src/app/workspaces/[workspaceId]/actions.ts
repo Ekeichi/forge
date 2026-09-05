@@ -1,14 +1,26 @@
 "use server";
 
-import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
-import { headers } from "next/headers";
 import { after } from "next/server";
 import { runAgent } from "@/lib/agent";
+import { getMembership, verifySession } from "@/lib/dal";
+import { checkAgentQuota } from "@/lib/quota";
 
 export async function askForge(query: string, workspaceId: string): Promise<string> {
-    const session = await auth.api.getSession({ headers: await headers() });
-    const userId = session?.user?.id ?? "anonymous";
+    // Une Server Action est un endpoint public : le workspaceId vient du client
+    // et doit être autorisé avant que l'agent ne touche aux documents.
+    const { userId } = await verifySession();
+
+    const membership = await getMembership(workspaceId);
+    if (!membership) {
+        return "Vous n'avez pas accès à cet espace de travail.";
+    }
+
+    // Chaque appel coute un appel API facture : on borne avant d'entrer dans la boucle.
+    const quota = await checkAgentQuota(userId, workspaceId);
+    if (!quota.allowed) {
+        return quota.message;
+    }
 
     const { output, metrics } = await runAgent(query, workspaceId, userId);
 

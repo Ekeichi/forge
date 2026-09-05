@@ -1,17 +1,16 @@
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
-import { redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import Link from "next/link";
 import prisma from "@/lib/prisma";
+import { getMembership } from "@/lib/dal";
 import { AddDocumentForm } from "./AddDocumentForm";
 import { DeleteDocumentButton } from "./DeleteDocumentButton";
 
 export default async function DocumentsPage({ params }: { params: Promise<{ workspaceId: string }> }) {
     const { workspaceId } = await params;
-    const session = await auth.api.getSession({ headers: await headers() });
-    if (!session?.user) {
-        redirect("/sign-in");
-    }
+
+    // Etre connecte ne suffit pas : il faut appartenir a ce workspace.
+    const membership = await getMembership(workspaceId);
+    if (!membership) notFound();
 
     const documents = await prisma.document.findMany({
         where: { workspaceId },

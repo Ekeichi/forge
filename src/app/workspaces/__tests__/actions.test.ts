@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { updateMemberRole } from '../actions';
+import { removeMember, updateMemberRole } from '../actions';
 import { auth } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 
@@ -85,5 +85,87 @@ describe('updateMemberRole Server Action - Règles de sécurité', () => {
 
     const result = await updateMemberRole(getFormData('target_1', 'ADMIN'));
     expect(result).toEqual({ success: true });
+  });
+});
+
+describe('removeMember Server Action - Révocation d\'accès', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+
+    vi.mocked(auth.api.getSession).mockResolvedValue({
+      user: { id: 'caller_1', email: 'caller@test.com', name: 'Caller', emailVerified: true, createdAt: new Date(), updatedAt: new Date(), image: null },
+      session: { id: 's1', userId: 'caller_1', expiresAt: new Date(), ipAddress: '', userAgent: '', token: '', createdAt: new Date(), updatedAt: new Date() }
+    });
+
+    // $transaction execute le callback avec le client mocke
+    vi.mocked(prisma.$transaction).mockImplementation(
+      ((fn: (tx: typeof prisma) => unknown) => fn(prisma)) as never
+    );
+    vi.mocked(prisma.user.findUnique).mockResolvedValue({ email: 'target@test.com' } as never);
+  });
+
+  const formData = (targetUserId: string) => {
+    const fd = new FormData();
+    fd.append('userId', targetUserId);
+    fd.append('workspaceId', 'ws_123');
+    return fd;
+  };
+
+  const asCaller = (role: 'OWNER' | 'ADMIN' | 'MEMBER') => vi.mocked(prisma.workspaceMembership.findUnique)
+    .mockResolvedValueOnce({ userId: 'caller_1', workspaceId: 'ws_123', role, createdAt: new Date() } as never);
+  const asTarget = (role: 'OWNER' | 'ADMIN' | 'MEMBER') => vi.mocked(prisma.workspaceMembership.findUnique)
+    .mockResolvedValueOnce({ userId: 'target_1', workspaceId: 'ws_123', role, createdAt: new Date() } as never);
+
+  it('MEMBER → retirer quelqu\'un est refusé', async () => {
+    asCaller('MEMBER');
+
+    const result = await removeMember(formData('target_1'));
+
+    expect(result).toEqual({ error: "Vous n'avez pas les droits pour retirer un membre." });
+    expect(prisma.workspaceMembership.delete).not.toHaveBeenCalled();
+  });
+
+  it('non-membre → retirer quelqu\'un est refusé', async () => {
+    vi.mocked(prisma.workspaceMembership.findUnique).mockResolvedValueOnce(null as never);
+
+    const result = await removeMember(formData('target_1'));
+
+    expect(result).toEqual({ error: "Vous n'avez pas les droits pour retirer un membre." });
+    expect(prisma.workspaceMembership.delete).not.toHaveBeenCalled();
+  });
+
+  it('ADMIN → retirer le OWNER est refusé', async () => {
+    asCaller('ADMIN');
+    asTarget('OWNER');
+
+    const result = await removeMember(formData('target_1'));
+
+    expect(result).toEqual({ error: "Vous ne pouvez pas retirer le propriétaire du workspace." });
+    expect(prisma.workspaceMembership.delete).not.toHaveBeenCalled();
+  });
+
+  it('ADMIN → se retirer soi-même est refusé', async () => {
+    asCaller('ADMIN');
+
+    const result = await removeMember(formData('caller_1'));
+
+    expect(result).toEqual({ error: "Vous ne pouvez pas vous retirer vous-même du workspace." });
+    expect(prisma.workspaceMembership.delete).not.toHaveBeenCalled();
+  });
+
+  it('ADMIN → retirer un MEMBER supprime l\'appartenance et l\'invitation', async () => {
+    asCaller('ADMIN');
+    asTarget('MEMBER');
+
+    const result = await removeMember(formData('target_1'));
+
+    expect(result).toEqual({ success: true });
+    expect(prisma.workspaceMembership.delete).toHaveBeenCalledWith({
+      where: { userId_workspaceId: { userId: 'target_1', workspaceId: 'ws_123' } },
+    });
+    // sinon l'invitation acceptée resterait un moyen de revenir
+    expect(prisma.workspaceInvitation.deleteMany).toHaveBeenCalledWith({
+      where: { workspaceId: 'ws_123', email: 'target@test.com' },
+    });
   });
 });
